@@ -90,3 +90,10 @@ To flash the firmware onto your ESP8266 using `esptool`, follow these steps:
     Ensure the flashing process completes successfully. If there are errors, double-check your connections and try again.
 
 Your ESP8266 is now ready with the new firmware.
+
+## MQTT
+
+Send message via mosquitto:
+```bash
+mosquitto_pub -t "notifications" -m "Hello, NodeMCU", -u "username" -P "password"
+```
