@@ -1,7 +1,7 @@
 import network
 import usocket
-import ujson
-from wifi import save_config
+from settings import Settings, save_config
+
 
 ACCESS_POINT_SSID = "NodeMCU-Config"
 ACCESS_POINT_PASSWORD = "config123"
@@ -17,53 +17,82 @@ def start_ap():
     ap.config(essid=ACCESS_POINT_SSID, password=ACCESS_POINT_PASSWORD)
     return ap
 
+
+def web_page():
+    html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Device Setup</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+        </head>
+        <body>
+            <h1>Device Settings</h1>
+            <form method="post" action="/configure">
+                <label>WiFi SSID:</label><br>
+                <input type="text" name="wifi_ssid" required><br><br>
+                
+                <label>WiFI Password:</label><br>
+                <input type="password" name="wifi_password" required><br><br>
+                
+                <label>MQTT Broker:</label><br>
+                <input type="text" name="mqtt_broker" required><br><br>
+
+                <label>MQTT User:</label><br>
+                <input type="text" name="mqtt_user" required><br><br>
+                
+                <label>MQTT Password:</label><br>
+                <input type="password" name="mqtt_password" required><br><br>
+
+                <button type="submit">Save & Reboot</button>
+            </form>
+        </body>
+        </html>
+        """
+    return html
+
+
 def web_config_server():
-    ap = start_ap()
+    _ = start_ap()
     s = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
-    s.bind(('', 80))
+    s.bind(("", 80))
     s.listen(5)
-    
+
     print(f"Web server running. Connect to {ACCESS_POINT_ADDRESS} to configure WiFi.")
-    
+
     while True:
         conn, addr = s.accept()
-        print('Got a connection from %s' % str(addr))
+        print("Got a connection from %s" % str(addr))
         request = handle_request(conn)
-        
+
         if "POST /configure" in request:
             body = request.split("\r\n\r\n")[1]
             params = body.split("&")
-            ssid = params[0].split("=")[1].replace("%20", " ")
-            password = params[1].split("=")[1].replace("%20", " ")
-            
-            save_config(ssid, password)
+            wifi_ssid = params[0].split("=")[1].replace("%20", " ")
+            wifi_password = params[1].split("=")[1].replace("%20", " ")
+            mqtt_broker = params[2].split("=")[1].replace("%20", " ")
+            mqtt_user = params[3].split("=")[1].replace("%20", " ")
+            mqtt_password = params[4].split("=")[1].replace("%20", " ")
+
+            save_config(
+                Settings(
+                    wifi_ssid=wifi_ssid,
+                    wifi_password=wifi_password,
+                    mqtt_broker=mqtt_broker,
+                    mqtt_user=mqtt_user,
+                    mqtt_password=mqtt_password,
+                )
+            )
             conn.send("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n")
             conn.send("<h1>Configuration saved! Rebooting...</h1>")
             conn.close()
             return True
-        
+
         else:
-            html = """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>WiFi Setup</title>
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-            </head>
-            <body>
-                <h1>WiFi Configuration</h1>
-                <form method="post" action="/configure">
-                    <label>SSID:</label><br>
-                    <input type="text" name="ssid" required><br><br>
-                    <label>Password:</label><br>
-                    <input type="password" name="password" required><br><br>
-                    <button type="submit">Save & Reboot</button>
-                </form>
-            </body>
-            </html>
-            """
-            conn.send("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n")
-            conn.send(html)
+            conn.send("HTTP/1.1 200 OK\n")
+            conn.send("Content-Type: text/html\n")
+            conn.send("Connection: close\n\n")
+            conn.sendall(web_page())
             conn.close()
 
 
@@ -79,4 +108,4 @@ def handle_request(conn):
     except OSError:
         pass
 
-    return request_raw.decode('utf-8')
+    return request_raw.decode("utf-8")
