@@ -19,34 +19,15 @@ def start_ap():
 
 
 def web_page():
-    html = """
+    try:
+        with open('templates/index.html', 'r') as file:
+            html = file.read()
+    except:
+        html = """
         <!DOCTYPE html>
         <html>
-        <head>
-            <title>Device Setup</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-        </head>
-        <body>
-            <h1>Device Settings</h1>
-            <form method="post" action="/configure">
-                <label>WiFi SSID:</label><br>
-                <input type="text" name="wifi_ssid" required><br><br>
-                
-                <label>WiFI Password:</label><br>
-                <input type="password" name="wifi_password" required><br><br>
-                
-                <label>MQTT Broker:</label><br>
-                <input type="text" name="mqtt_broker" required><br><br>
-
-                <label>MQTT User:</label><br>
-                <input type="text" name="mqtt_user" required><br><br>
-                
-                <label>MQTT Password:</label><br>
-                <input type="password" name="mqtt_password" required><br><br>
-
-                <button type="submit">Save & Reboot</button>
-            </form>
-        </body>
+            <head><title>Error</title></head>
+            <body><h1>Error loading page</h1></body>
         </html>
         """
     return html

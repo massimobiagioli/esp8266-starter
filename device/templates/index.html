@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Device Setup</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            color: #333;
+        }
+        h1 {
+            color: #444;
+            text-align: center;
+        }
+        form {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            form {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Device Settings</h1>
+    <form method="post" action="/configure">
+        <label>WiFi SSID:</label>
+        <input type="text" name="wifi_ssid" required>
+        
+        <label>WiFI Password:</label>
+        <input type="password" name="wifi_password" required>
+        
+        <label>MQTT Broker:</label>
+        <input type="text" name="mqtt_broker" required>
+
+        <label>MQTT User:</label>
+        <input type="text" name="mqtt_user" required>
+        
+        <label>MQTT Password:</label>
+        <input type="password" name="mqtt_password" required>
+
+        <button type="submit">Save & Reboot</button>
+    </form>
+</body>
+</html>
