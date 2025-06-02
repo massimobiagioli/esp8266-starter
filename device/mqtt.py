@@ -2,60 +2,38 @@ from umqttsimple import MQTTClient
 import machine
 import ubinascii
 import time
+from custom_logic import init_custom_logic
 
-
-MQTT_SERVER = b"raspberrypi.homenet.telecomitalia.it"
-MQTT_PORT = 1883
-MQTT_USER = "mosquitto"
-MQTT_PASS = "mosquitto"
-
-CLIENT_ID = ubinascii.hexlify(machine.unique_id())
-TOPIC_SUB = b"notification"
-TOPIC_PUB = b"hello"
 
 MESSAGE_INTERVAL = 5
 
-
-def sub_cb(topic, msg):
-    print((topic, msg))
-    if topic == b"notification":
-        print(f"Message received: {msg}")
-
-
-def connect_and_subscribe():
-    client = MQTTClient(CLIENT_ID, MQTT_SERVER, user=MQTT_USER, password=MQTT_PASS)
-    client.set_callback(sub_cb)
-    client.connect()
-    client.subscribe(TOPIC_SUB)
-    print(
-        "Connected to %s MQTT broker, subscribed to %s topic" % (MQTT_SERVER, TOPIC_SUB)
-    )
-    return client
+client_id = ubinascii.hexlify(machine.unique_id())
 
 
 def restart_and_reconnect():
-    print("Failed to connect to MQTT broker. Reconnecting...")
     time.sleep(10)
     machine.reset()
 
 
-def init_mqtt():
+def init_mqtt(mqtt_broker, mqtt_user, mqtt_pass, topics):
     try:
-        client = connect_and_subscribe()
+        client = MQTTClient(client_id, mqtt_broker, user=mqtt_user, password=mqtt_pass)
+        init_custom_logic(client)
+        client.connect()
+        print("Connected to %s MQTT broker" % (mqtt_broker))
+
+        for topic in topics:
+            client.subscribe(topic)
+            print(f"Subscribed to topic: {topic}")
+
     except OSError as e:
         print(e)
+        print("Failed to connect to MQTT broker. Reconnecting...")
         restart_and_reconnect()
-
-    # last_message = 0
-    # counter = 0
 
     while True:
         try:
             client.check_msg()
-            # if (time.time() - last_message) > MESSAGE_INTERVAL:
-            #     msg = b'Hello #%d' % counter
-            #     client.publish(TOPIC_PUB, msg)
-            #     last_message = time.time()
-            #     counter += 1
+            time.sleep(MESSAGE_INTERVAL)
         except OSError:
             restart_and_reconnect()

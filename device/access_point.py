@@ -20,7 +20,7 @@ def start_ap():
 
 def web_page():
     try:
-        with open('templates/index.html', 'r') as file:
+        with open("templates/index.html", "r") as file:
             html = file.read()
     except:
         html = """

@@ -2,7 +2,10 @@ import network
 import utime
 
 
-def connect_wifi(ssid, password, timeout=10):
+DEFAULT_TIMEOUT = 10
+
+
+def connect_wifi(ssid, password, timeout=DEFAULT_TIMEOUT):
     sta_if = network.WLAN(network.STA_IF)
     sta_if.active(True)
     sta_if.connect(ssid, password)
