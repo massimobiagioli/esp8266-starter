@@ -97,3 +97,8 @@ Send message via mosquitto:
 ```bash
 mosquitto_pub -t "notifications" -m "Hello, NodeMCU", -u "username" -P "password"
 ```
+
+Receive message via mosquitto:
+```bash
+mosquitto_sub -t "notifications" -u "username" -P "password"
+```
