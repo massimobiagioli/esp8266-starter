@@ -1,5 +1,6 @@
 from umqttsimple import MQTTClient
 import machine
+import json
 import ubinascii
 import time
 from custom_logic import init_custom_logic
@@ -29,7 +30,7 @@ def notify_event(client, topic, event_type, payload=None, retain=True, qos=1):
         "timestamp": time.time(),
         "payload": payload if payload is not None else {},
     }
-    client.publish(topic, str(event).encode("utf-8"), retain=retain, qos=qos)
+    client.publish(topic, json.dumps(event).encode("utf-8"), retain=retain, qos=qos)
 
 
 def set_on_disconnect(client, payload=None):
@@ -39,7 +40,7 @@ def set_on_disconnect(client, payload=None):
         "payload": payload if payload is not None else {},
     }
     client.set_last_will(
-        DEVICE_STATUS_TOPIC, str(last_will_message).encode("utf-8"), retain=True, qos=1
+        DEVICE_STATUS_TOPIC, json.dumps(last_will_message).encode("utf-8"), retain=True, qos=1
     )
 
 
