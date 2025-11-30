@@ -1,22 +1,15 @@
 from umqttsimple import MQTTClient
 import machine
 import json
-import ubinascii
 import time
-from custom_logic import init_custom_logic
-from device_info import DeviceInfo
 
-client_id = ubinascii.hexlify(machine.unique_id())
-
-device_info = DeviceInfo(
-    device_id=client_id.decode("utf-8"), device_name="tester", device_type="esp32"
-)
 
 MESSAGE_INTERVAL = 5
 OUTBOUND_TOPIC = b"from_device"
 DEVICE_STATUS_TOPIC = b"device_status"
 EVENT_CONNECTED = "connected"
 EVENT_DISCONNECTED = "disconnected"
+KEEP_ALIVE_INTERVAL = 300
 
 
 def restart_and_reconnect():
@@ -24,7 +17,7 @@ def restart_and_reconnect():
     machine.reset()
 
 
-def notify_event(client, topic, event_type, payload=None, retain=True, qos=1):
+def send_message(client, topic, event_type, payload=None, retain=True, qos=1):
     event = {
         "event_type": event_type,
         "timestamp": time.time(),
@@ -40,15 +33,18 @@ def set_on_disconnect(client, payload=None):
         "payload": payload if payload is not None else {},
     }
     client.set_last_will(
-        DEVICE_STATUS_TOPIC, json.dumps(last_will_message).encode("utf-8"), retain=True, qos=1
+        DEVICE_STATUS_TOPIC,
+        json.dumps(last_will_message).encode("utf-8"),
+        retain=True,
+        qos=1,
     )
 
 
-def connect_to_broker(client):
+def connect_to_broker(client, device_info):
     try:
         set_on_disconnect(client, device_info.to_dict())
         client.connect()
-        notify_event(
+        send_message(
             client, DEVICE_STATUS_TOPIC, EVENT_CONNECTED, device_info.to_dict()
         )
     except OSError as e:
@@ -57,21 +53,23 @@ def connect_to_broker(client):
         restart_and_reconnect()
 
 
-def init_mqtt(mqtt_broker, mqtt_user, mqtt_pass, topics):
+def init_mqtt(settings, device_info, topics=[], cb=None):
     client = MQTTClient(
-        client_id, mqtt_broker, user=mqtt_user, password=mqtt_pass, keepalive=60
+        device_info.device_id,
+        settings.mqtt_broker,
+        user=settings.mqtt_user,
+        password=settings.mqtt_password,
+        keepalive=KEEP_ALIVE_INTERVAL,
     )
-    init_custom_logic(client)
-    connect_to_broker(client)
-    print("Connected to MQTT broker: %s" % (mqtt_broker))
+
+    connect_to_broker(client, device_info)
+    print("Connected to MQTT broker: %s" % (settings.mqtt_broker))
+
+    if cb:
+        client.set_callback(cb)
 
     for topic in topics:
         client.subscribe(topic)
         print(f"Subscribed to topic: {topic}")
 
-    while True:
-        try:
-            client.check_msg()
-            time.sleep(MESSAGE_INTERVAL)
-        except OSError:
-            restart_and_reconnect()
+    return client

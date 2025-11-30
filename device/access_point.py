@@ -1,6 +1,6 @@
 import network
 import usocket
-from settings import Settings, save_config
+from settings import Settings, save_settings
 
 
 ACCESS_POINT_SSID = "NodeMCU-Config"
@@ -49,19 +49,39 @@ def web_config_server():
         if "POST /configure" in request:
             body = request.split("\r\n\r\n")[1]
             params = body.split("&")
-            wifi_ssid = params[0].split("=")[1].replace("%20", " ")
-            wifi_password = params[1].split("=")[1].replace("%20", " ")
-            mqtt_broker = params[2].split("=")[1].replace("%20", " ")
-            mqtt_user = params[3].split("=")[1].replace("%20", " ")
-            mqtt_password = params[4].split("=")[1].replace("%20", " ")
 
-            save_config(
+            # Parse form data into a dictionary by field name
+            form_data = {}
+            for param in params:
+                if "=" in param:
+                    parts = param.split("=", 1)
+                    key = parts[0]
+                    value = parts[1] if len(parts) > 1 else ""
+                    # Simple URL decode
+                    value = value.replace("+", " ")
+                    value = value.replace("%20", " ")
+                    value = value.replace("%21", "!")
+                    value = value.replace("%22", '"')
+                    value = value.replace("%23", "#")
+                    value = value.replace("%24", "$")
+                    value = value.replace("%25", "%")
+                    value = value.replace("%26", "&")
+                    value = value.replace("%2B", "+")
+                    value = value.replace("%2F", "/")
+                    value = value.replace("%3A", ":")
+                    value = value.replace("%3D", "=")
+                    value = value.replace("%3F", "?")
+                    value = value.replace("%40", "@")
+                    form_data[key] = value
+
+            save_settings(
                 Settings(
-                    wifi_ssid=wifi_ssid,
-                    wifi_password=wifi_password,
-                    mqtt_broker=mqtt_broker,
-                    mqtt_user=mqtt_user,
-                    mqtt_password=mqtt_password,
+                    device_alias=form_data.get("device_alias", ""),
+                    wifi_ssid=form_data.get("wifi_ssid", ""),
+                    wifi_password=form_data.get("wifi_password", ""),
+                    mqtt_broker=form_data.get("mqtt_broker", ""),
+                    mqtt_user=form_data.get("mqtt_user", ""),
+                    mqtt_password=form_data.get("mqtt_password", ""),
                 )
             )
             conn.send("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n")
